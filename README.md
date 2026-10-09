@@ -9,7 +9,7 @@
 
 > **Hands-on Runnable Sandbox**: To deploy and test the local multi-node Kind & GitOps environment that mirrors this architecture, visit [hybrid-gitops-sre-lab](https://github.com/GRayMillerDes/hybrid-gitops-sre-lab).
 
-This repository contains the architectural blueprints, technical retrospectives, security guardrails, and topology specifications for an enterprise multi-cloud CI/CD platform engineered under strict financial least-privilege policies.
+This repository provides production-grade architectural blueprints, security guardrails, and VCS delivery specifications for an enterprise multi-cloud CI/CD platform engineered under strict financial least-privilege standards.
 
 ---
 
@@ -38,15 +38,20 @@ cd hybrid-gitops-sre-lab && ./scripts/setup-local-env.sh
 
 ---
 
-## Document & Asset Index
+## Architecture Deep-Dive Highlights
 
-| Focus Area | Reference Document | Engineering Scope |
-| :--- | :--- | :--- |
-| **System Architecture** | **[Deep-Dive Architecture Guide](./architecture/architecture-deep-dive.md)** | Control Plane vs Data Plane segregation, mTLS JNLP tunnels, in-memory secret lifecycle |
-| **IaC Delivery & VCS** | **[Terraform Cloud VCS Spec](./specs/terraform-cloud-vcs-spec.md)** | GitHub Enterprise PR iteration, speculative plan checks, remote runners & zero-clickops |
-| **Security & Compliance** | **[Least-Privilege RBAC Matrix](./specs/least-privilege-rbac-matrix.yaml)** | Production-grade RBAC enforcing zero-interactive-exec policies across multi-tenant clusters |
-| **Hardening Benchmarks** | **[Zero-Trust Guardrails](./specs/zero-trust-guardrails.md)** | CIS Kubernetes benchmark hardening rules and automated drift detection specifications |
-| **Runnable Demo** | **[Local SRE Sandbox Repo](https://github.com/GRayMillerDes/hybrid-gitops-sre-lab)** | Local 3-node Kind cluster with ESO, Argo CD, and SRE Golden Signals telemetry |
+Detailed technical breakdowns are documented in **[architecture-deep-dive.md](./architecture/architecture-deep-dive.md)**. Below are the key system mechanisms:
+
+1. **Control Plane vs. Data Plane Segregation**:
+   The central management plane (CloudBees Operations Center) handles RBAC, licensing, and global configuration bundles. Workload execution is delegated to isolated regional data planes (AWS EKS, Tencent Cloud TKE, Bare-Metal IDC).
+2. **Outbound-Only mTLS JNLP Networking**:
+   Controllers establish outbound-only secure tunnels back to the control plane, eliminating inbound firewall rules into private VPCs.
+3. **Zero-Secret In-Memory Lifecycle**:
+   Credentials never touch Git or `terraform.tfstate`. External Secrets Operator (ESO) reconciles secrets directly from AWS SSM / Tencent Cloud KMS / Vault into ephemeral cluster memory.
+4. **Traffic Localization & Zero Egress**:
+   Dynamic build agents are spawned strictly within local VPCs where source code and caches reside, preventing cross-cloud latency and egress fees.
+
+👉 *[Read Complete Architectural Specification →](./architecture/architecture-deep-dive.md)*
 
 ---
 
@@ -56,7 +61,6 @@ cd hybrid-gitops-sre-lab && ./scripts/setup-local-env.sh
 
 ```mermaid
 graph TB
-    %% Styling and Class Definitions
     classDef gitops fill:#0f172a,stroke:#38bdf8,stroke-width:2px,color:#f8fafc;
     classDef secrets fill:#022c22,stroke:#10b981,stroke-width:2px,color:#d1fae5;
     classDef core fill:#31104b,stroke:#a855f7,stroke-width:2px,color:#faf5ff;
@@ -107,7 +111,6 @@ graph TB
         SPLUNK["Enterprise Splunk & Prometheus"]:::obs
     end
 
-    %% Pipeline and Control Workflows
     GH ==>|1. Pull Request Trigger| PR
     PR ==>|2. Automated Policy Approval| TFC
     TFC -->|3. Declarative Helm Deploy| OC
@@ -139,12 +142,46 @@ graph TB
 
 ---
 
-## Key Architectural Pillars
+## VCS Pipeline & Release Governance Specification
 
-1. **Eliminating the Terraform State Credential Leak**: Decoupled secret management via **External Secrets Operator (ESO)** ensures that zero credentials are committed to `terraform.tfstate`.
-2. **The "No-kubectl" Dilemma**: Engineered automated diagnostic hooks within Terraform Cloud runners that inspect `.status.containerStatuses` and extract container exit codes and `--previous` stderr streams without granting shell access.
-3. **Zero-ClickOps Compliance**: Automated golden machine image pipelines with **HashiCorp Packer** and exclusive declarative scheduling through **Terraform Cloud** revoke human write permissions to public cloud web consoles.
-4. **Traffic Localization & Zero Egress**: Multi-region build workloads execute strictly inside tenant VPCs, eliminating cross-cloud data transfer fees and network hops.
+Detailed delivery flows are codified in **[terraform-cloud-vcs-spec.md](./specs/terraform-cloud-vcs-spec.md)**. All infrastructure and controller version upgrades follow dual-control GitOps iteration:
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Admin as SRE / Release Manager
+    participant CI as Image Bake Pipeline (.github/workflows)
+    participant REG as Enterprise OCI Registry (ghcr.io)
+    participant HELM as GitOps Helm Values (values.yaml)
+    participant GHE as GitHub Enterprise PR Gate
+    participant TFC as Terraform Cloud & Argo CD
+
+    Admin->>CI: Trigger Build with Upstream Base + Patch (e.g. 2.440.3.1-p1)
+    CI->>CI: CIS Hardening + Trivy CVE Security Scan
+    CI->>REG: Push Immutable Golden Image (OC / MC)
+    Note over Admin,HELM: Manual Promotion Gate (Separation of Duties)
+    Admin->>HELM: Manually bump image.tag to 2.440.3.1-p1
+    Admin->>GHE: Submit PR for Peer Review
+    GHE->>TFC: Speculative Plan Check
+    Admin->>GHE: Merge PR into main
+    TFC->>TFC: Declarative Sync: Argo CD rolls out new Immutable Controller Pods
+```
+
+👉 *[Read Complete VCS & Promotion Specification →](./specs/terraform-cloud-vcs-spec.md)*
+
+---
+
+## Security & Compliance Specifications Matrix
+
+Production policies from **[least-privilege-rbac-matrix.yaml](./specs/least-privilege-rbac-matrix.yaml)** and **[zero-trust-guardrails.md](./specs/zero-trust-guardrails.md)** are summarized below:
+
+| Compliance Domain | Enforced Specification | Implementation Artifact | Threat Prevented |
+| :--- | :--- | :--- | :--- |
+| **Interactive Access** | Zero `kubectl exec` / `attach` | [`least-privilege-rbac-matrix.yaml`](./specs/least-privilege-rbac-matrix.yaml) | Eliminates shell escalation & unauthorized data tampering (PCI-DSS) |
+| **Container Sandbox** | `readOnlyRootFilesystem: true`, `drop: ALL` | [`zero-trust-guardrails.md`](./specs/zero-trust-guardrails.md) | Blocks malicious binary downloads & Linux kernel privilege escalation |
+| **Workload Identity** | Non-root UID `1000`, `RuntimeDefault` seccomp | [`zero-trust-guardrails.md`](./specs/zero-trust-guardrails.md) | Prevents container breakout to host node |
+| **State Sanitization** | External Secrets Operator (In-Memory K8s Secrets) | [`architecture-deep-dive.md`](./architecture/architecture-deep-dive.md) | Prevents credential leaks in `terraform.tfstate` |
+| **Version Drift** | No `:latest` tags / Explicit semver in Git | [`terraform-cloud-vcs-spec.md`](./specs/terraform-cloud-vcs-spec.md) | Guarantees reproducible builds & instant deterministic rollbacks |
 
 ---
 
@@ -155,6 +192,18 @@ graph TB
 | **ADR-001** | Terraform state files store credentials in plaintext when using `helm_release` values. | Adopt External Secrets Operator (ESO) with ephemeral in-memory K8s secrets. | Slightly higher initial CRD reconciliation complexity; completely eliminates credential leakage in CI/CD state. |
 | **ADR-002** | Financial compliance forbids `kubectl exec` / SSH into production worker nodes. | Implement non-interactive diagnostic sidecars and stderr extractors in CI runners. | Eliminates manual ad-hoc troubleshooting; enforces deterministic RCA and structured logging. |
 | **ADR-003** | Multi-cloud latency and network isolation across AWS, Tencent Cloud, and IDC. | Centralize Control Plane (CloudBees OC) and distribute Data Plane controllers per cloud. | Requires outbound-only mTLS JNLP connectivity; local build pods avoid cross-cloud egress costs. |
+
+---
+
+## Document & Asset Index
+
+| Focus Area | Reference Document | Engineering Scope |
+| :--- | :--- | :--- |
+| **System Architecture** | **[Deep-Dive Architecture Guide](./architecture/architecture-deep-dive.md)** | Control Plane vs Data Plane segregation, mTLS JNLP tunnels, in-memory secret lifecycle |
+| **IaC Delivery & VCS** | **[Terraform Cloud VCS Spec](./specs/terraform-cloud-vcs-spec.md)** | GitHub Enterprise PR iteration, speculative plan checks, remote runners & zero-clickops |
+| **Security & Compliance** | **[Least-Privilege RBAC Matrix](./specs/least-privilege-rbac-matrix.yaml)** | Production-grade RBAC enforcing zero-interactive-exec policies across multi-tenant clusters |
+| **Hardening Benchmarks** | **[Zero-Trust Guardrails](./specs/zero-trust-guardrails.md)** | CIS Kubernetes benchmark hardening rules and automated drift detection specifications |
+| **Runnable Demo** | **[Local SRE Sandbox Repo](https://github.com/GRayMillerDes/hybrid-gitops-sre-lab)** | Local 3-node Kind cluster with ESO, Argo CD, and SRE Golden Signals telemetry |
 
 ---
 
