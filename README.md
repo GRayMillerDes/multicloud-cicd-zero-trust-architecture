@@ -44,6 +44,7 @@ cd hybrid-gitops-sre-lab && ./scripts/setup-local-env.sh
 | :--- | :--- | :--- |
 | **System Architecture** | 📖 **[Deep-Dive Architecture Guide](./architecture/architecture-deep-dive.md)** | Control Plane vs Data Plane segregation, mTLS JNLP tunnels, in-memory secret lifecycle |
 | **Executive Retrospective** | 💼 **[LinkedIn Pulse Article](./articles/linkedin-pulse-article.md)** | Engineering retrospective on scaling platform operations under zero-trust governance |
+| **IaC Delivery & VCS** | 🏗️ **[Terraform Cloud VCS Spec](./specs/terraform-cloud-vcs-spec.md)** | GitHub Enterprise PR iteration, speculative plan checks, remote runners & zero-clickops |
 | **Security & Compliance** | 🛡️ **[Least-Privilege RBAC Matrix](./specs/least-privilege-rbac-matrix.yaml)** | Production-grade RBAC enforcing zero-interactive-exec policies across multi-tenant clusters |
 | **Hardening Benchmarks** | 📋 **[Zero-Trust Guardrails](./specs/zero-trust-guardrails.md)** | CIS Kubernetes benchmark hardening rules and automated drift detection specifications |
 | **Runnable Demo** | 🚀 **[Local SRE Sandbox Repo](https://github.com/GRayMillerDes/hybrid-gitops-sre-lab)** | Local 3-node Kind cluster with ESO, Argo CD, and SRE Golden Signals telemetry |
