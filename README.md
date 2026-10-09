@@ -25,9 +25,9 @@ kubectl apply --dry-run=client -f ./specs/least-privilege-rbac-matrix.yaml
 ```
 
 ### 2. Inspect Specifications & Hardening Rules
-- **[Deep-Dive Architecture Guide](./architecture/architecture-deep-dive.md)**: Control Plane vs Data Plane segregation, mTLS JNLP tunnels, in-memory secret lifecycle.
-- **[LinkedIn Pulse Article](./articles/linkedin-pulse-article.md)**: Engineering retrospective on scaling platform operations under zero-trust governance.
+- **[Deep-Dive Architecture Guide](./architecture/architecture-deep-dive.md)**: Executive problem statement, control plane vs data plane segregation, mTLS JNLP tunnels, in-memory secret lifecycle.
 - **[Zero-Trust Guardrails](./specs/zero-trust-guardrails.md)**: CIS Kubernetes benchmark hardening rules and automated drift detection specifications.
+- **[Terraform Cloud VCS Spec](./specs/terraform-cloud-vcs-spec.md)**: GitHub Enterprise PR iteration, speculative plan checks, remote runners & zero-clickops.
 
 ### 3. Deploy the Companion Runnable Sandbox
 To spin up a live 3-node Kind cluster reproducing this architecture (Argo CD, ESO, Prometheus, Grafana) locally on your workstation:
@@ -43,7 +43,6 @@ cd hybrid-gitops-sre-lab && ./scripts/setup-local-env.sh
 | Focus Area | Reference Document | Engineering Scope |
 | :--- | :--- | :--- |
 | **System Architecture** | **[Deep-Dive Architecture Guide](./architecture/architecture-deep-dive.md)** | Control Plane vs Data Plane segregation, mTLS JNLP tunnels, in-memory secret lifecycle |
-| **Executive Retrospective** | **[LinkedIn Pulse Article](./articles/linkedin-pulse-article.md)** | Engineering retrospective on scaling platform operations under zero-trust governance |
 | **IaC Delivery & VCS** | **[Terraform Cloud VCS Spec](./specs/terraform-cloud-vcs-spec.md)** | GitHub Enterprise PR iteration, speculative plan checks, remote runners & zero-clickops |
 | **Security & Compliance** | **[Least-Privilege RBAC Matrix](./specs/least-privilege-rbac-matrix.yaml)** | Production-grade RBAC enforcing zero-interactive-exec policies across multi-tenant clusters |
 | **Hardening Benchmarks** | **[Zero-Trust Guardrails](./specs/zero-trust-guardrails.md)** | CIS Kubernetes benchmark hardening rules and automated drift detection specifications |
@@ -145,6 +144,7 @@ graph TB
 1. **Eliminating the Terraform State Credential Leak**: Decoupled secret management via **External Secrets Operator (ESO)** ensures that zero credentials are committed to `terraform.tfstate`.
 2. **The "No-kubectl" Dilemma**: Engineered automated diagnostic hooks within Terraform Cloud runners that inspect `.status.containerStatuses` and extract container exit codes and `--previous` stderr streams without granting shell access.
 3. **Zero-ClickOps Compliance**: Automated golden machine image pipelines with **HashiCorp Packer** and exclusive declarative scheduling through **Terraform Cloud** revoke human write permissions to public cloud web consoles.
+4. **Traffic Localization & Zero Egress**: Multi-region build workloads execute strictly inside tenant VPCs, eliminating cross-cloud data transfer fees and network hops.
 
 ---
 
@@ -168,8 +168,6 @@ multicloud-cicd-zero-trust-architecture/
 │   ├── multicloud-cicd-topology.svg       # Vector Topology Architecture Diagram
 │   ├── multicloud-cicd-topology.png       # High-Resolution Architectural Topology
 │   └── multicloud-cicd-topology.mermaid   # Mermaid Source Graph
-├── articles/
-│   └── linkedin-pulse-article.md          # Engineering Retrospective for LinkedIn Pulse
 └── specs/
     ├── least-privilege-rbac-matrix.yaml   # Production Kubernetes RBAC (Zero-Exec Policy)
     ├── terraform-cloud-vcs-spec.md        # Terraform Cloud & GitHub Enterprise VCS Spec
