@@ -102,11 +102,23 @@ graph TB
 
 ---
 
+## 🎯 How to Use This Repository (Reading & Navigation Guide)
+
+Depending on your role and objectives, here is the recommended path through this blueprint:
+
+| Your Persona / Objective | Recommended Starting Point | Key Takeaway |
+| :--- | :--- | :--- |
+| **Recruiters / Engineering Leaders** | 💼 **[LinkedIn Pulse Retrospective](./articles/linkedin-pulse-article.md)** | High-level business context, executive summary of zero-trust wins, and SRE impact. |
+| **Principal / Cloud-Native Architects** | 🗺️ **[Topology](./architecture/multicloud-cicd-topology.svg)** & 📖 **[Deep-Dive Architecture Guide](./architecture/architecture-deep-dive.md)** | Full technical breakdown of control plane separation, mTLS agent transport, and ESO secret sync. |
+| **Security & Compliance Officers** | 🛡️ **[Least-Privilege RBAC Matrix](./specs/least-privilege-rbac-matrix.yaml)** & 📋 **[Zero-Trust Guardrails](./specs/zero-trust-guardrails.md)** | Auditable configurations enforcing zero-interactive-exec policies and CIS benchmark hardening. |
+| **Hands-on Practitioners** | 🚀 **[hybrid-gitops-sre-lab](https://github.com/GRayMillerDes/hybrid-gitops-sre-lab)** | Jump into the runnable local sandbox to provision Kind, Argo CD, and test zero-secret workflows. |
+
+---
+
 ## 📚 Core Repository Contents
 
 - 📖 **[Deep-Dive Architecture Guide](./architecture/architecture-deep-dive.md)**: Technical breakdown of control plane vs data plane segregation, JNLP mTLS networking, and in-memory secret lifecycle.
 - 💼 **[LinkedIn Pulse Ready Article](./articles/linkedin-pulse-article.md)**: English technical retrospective formatted specifically for LinkedIn Pulse and Featured sections.
-- 🇨🇳 **[中文架构实录专栏文章](./articles/technical-retrospective-zh.md)**: 面向知乎、微信公众号、掘金等中文技术社区的深度复盘长文。
 - 🛡️ **[Least-Privilege RBAC Matrix](./specs/least-privilege-rbac-matrix.yaml)**: Declarative Kubernetes RBAC configurations enforcing zero-interactive-exec policies.
 - 📋 **[Zero-Trust Guardrails](./specs/zero-trust-guardrails.md)**: Hardening benchmarks and automated drift detection specifications.
 
