@@ -1,69 +1,80 @@
 graph TB
-    subgraph "Git & Governance Layer"
-        GH[GitHub Enterprise / Code Repos]
-        PR[Pull Request + AIOps Drift Validator]
-        TFC[Terraform Cloud Workflows<br/>(Zero-ClickOps Policy)]
+    %% Styling and Class Definitions
+    classDef gitops fill:#0f172a,stroke:#38bdf8,stroke-width:2px,color:#f8fafc;
+    classDef secrets fill:#022c22,stroke:#10b981,stroke-width:2px,color:#d1fae5;
+    classDef core fill:#31104b,stroke:#a855f7,stroke-width:2px,color:#faf5ff;
+    classDef aws fill:#451a03,stroke:#f59e0b,stroke-width:2px,color:#fef3c7;
+    classDef tke fill:#064e3b,stroke:#10b981,stroke-width:2px,color:#ecfdf5;
+    classDef idc fill:#1e293b,stroke:#64748b,stroke-width:2px,color:#f1f5f9;
+    classDef obs fill:#4c0519,stroke:#f43f5e,stroke-width:2px,color:#ffe4e6;
+    classDef pod fill:#1e1b4b,stroke:#6366f1,stroke-width:2px,color:#e0e7ff;
+
+    subgraph LAYER_GITOPS["🛡️ Git & Governance Layer (Zero-ClickOps)"]
+        GH["🐙 GitHub Enterprise / Monorepo"]:::gitops
+        PR["🔍 PR Validation & Drift Check"]:::gitops
+        TFC["🏗️ Terraform Cloud Workflows<br/>(Execution Engine)"]:::gitops
     end
 
-    subgraph "Secret & Identity Fabric (Zero-Trust)"
-        SSM[AWS SSM Parameter Store / KMS]
-        TCC_KMS[Tencent Cloud KMS / Secrets]
-        VAULT[Enterprise Vault / Central PKI]
+    subgraph LAYER_SECRETS["🔐 Identity & Secret Fabric (Zero-Trust)"]
+        SSM[("☁️ AWS SSM Parameter Store / KMS")]:::secrets
+        TCC_KMS[("☁️ Tencent Cloud KMS / Secrets")]:::secrets
+        VAULT[("🔒 Enterprise Vault / Central PKI")]:::secrets
     end
 
-    subgraph "Enterprise CI/CD Control Plane"
-        OC[CloudBees Operations Center (OC)<br/>• Central RBAC & Licensing<br/>• Global CasC Bundles]
+    subgraph LAYER_CONTROL["🏢 Enterprise CI/CD Control Plane"]
+        OC["🐝 CloudBees Operations Center (OC)<br/>• Central RBAC & Licensing<br/>• Global CasC Bundles & Governance"]:::core
     end
 
-    subgraph "Multi-Cloud Kubernetes Data Planes"
-        subgraph "AWS Estate (EKS)"
-            ESO_AWS[External Secrets Operator]
-            MC_AWS[Managed Controller - AWS Apps]
-            POD_AWS[Ephemeral Dynamic Build Pods]
+    subgraph LAYER_DATA["🌐 Multi-Cloud Kubernetes Data Planes"]
+        subgraph CLOUD_AWS["🟠 AWS Estate (EKS Cluster)"]
+            ESO_AWS["🔐 External Secrets Operator"]:::secrets
+            MC_AWS["🐝 Managed Controller (AWS Apps)"]:::aws
+            POD_AWS["⚡ Ephemeral Build Pods (Agents)"]:::pod
         end
 
-        subgraph "Tencent Cloud Estate (TKE)"
-            ESO_TCC[External Secrets Operator]
-            MC_TCC[Managed Controller - Core Platform]
-            POD_TCC[Ephemeral Dynamic Build Pods]
+        subgraph CLOUD_TKE["🟢 Tencent Cloud Estate (TKE Cluster)"]
+            ESO_TCC["🔐 External Secrets Operator"]:::secrets
+            MC_TCC["🐝 Managed Controller (Core Platform)"]:::tke
+            POD_TCC["⚡ Ephemeral Build Pods (Agents)"]:::pod
         end
 
-        subgraph "On-Premises IDC (Bare-Metal K8s)"
-            ESO_IDC[External Secrets Operator]
-            MC_IDC[Managed Controller - Legacy/Hybrid]
-            POD_IDC[Ephemeral Dynamic Build Pods]
+        subgraph CLUSTER_IDC["⚪ On-Premises IDC (Bare-Metal K8s)"]
+            ESO_IDC["🔐 External Secrets Operator"]:::secrets
+            MC_IDC["🐝 Managed Controller (Legacy/Hybrid)"]:::idc
+            POD_IDC["⚡ Ephemeral Build Pods (Agents)"]:::pod
         end
     end
 
-    subgraph "SRE & Non-Interactive Observability"
-        LOGS[Terraform Cloud Diagnostic Hooks<br/>(Pod/Sidecar Stderr Aggregator)]
-        SPLUNK[Enterprise Splunk / Prometheus]
+    subgraph LAYER_OBS["📊 SRE & Non-Interactive Observability"]
+        LOGS["🩺 TFC Diagnostic Sidecar / Hooks<br/>(Exit Code & Stderr Aggregator)"]:::obs
+        SPLUNK["📈 Enterprise Splunk & Prometheus"]:::obs
     end
 
-    %% Flow connections
-    GH -->|PR Trigger| PR
-    PR -->|Approval Gate| TFC
-    TFC -->|Declarative Helm Deploy| OC
-    TFC -->|Declarative Helm Deploy| MC_AWS
-    TFC -->|Declarative Helm Deploy| MC_TCC
-    TFC -->|Declarative Helm Deploy| MC_IDC
+    %% Pipeline and Control Workflows
+    GH ==>|1. Pull Request Trigger| PR
+    PR ==>|2. Automated Policy Approval| TFC
+    TFC -->|3. Declarative Helm Deploy| OC
+    TFC -->|3. Declarative Helm Deploy| MC_AWS
+    TFC -->|3. Declarative Helm Deploy| MC_TCC
+    TFC -->|3. Declarative Helm Deploy| MC_IDC
 
-    SSM -.->|Async Sync| ESO_AWS
-    TCC_KMS -.->|Async Sync| ESO_TCC
-    VAULT -.->|TLS / Dynamic Keys| ESO_IDC
+    SSM -.->|4. KMS Sync| ESO_AWS
+    TCC_KMS -.->|4. KMS Sync| ESO_TCC
+    VAULT -.->|4. Dynamic TLS / PKI| ESO_IDC
 
-    ESO_AWS -->|Secret Injection| MC_AWS
-    ESO_TCC -->|Secret Injection| MC_TCC
-    ESO_IDC -->|Secret Injection| MC_IDC
+    ESO_AWS ==>|5. Ephemeral In-Memory Injection| MC_AWS
+    ESO_TCC ==>|5. Ephemeral In-Memory Injection| MC_TCC
+    ESO_IDC ==>|5. Ephemeral In-Memory Injection| MC_IDC
 
-    OC ===|JNLP / mTLS Management| MC_AWS
-    OC ===|JNLP / mTLS Management| MC_TCC
-    OC ===|JNLP / mTLS Management| MC_IDC
+    OC ===|6. Secure mTLS / JNLP Protocol| MC_AWS
+    OC ===|6. Secure mTLS / JNLP Protocol| MC_TCC
+    OC ===|6. Secure mTLS / JNLP Protocol| MC_IDC
 
-    MC_AWS --> POD_AWS
-    MC_TCC --> POD_TCC
-    MC_IDC --> POD_IDC
+    MC_AWS -->|7. Dynamic Pod Spawn| POD_AWS
+    MC_TCC -->|7. Dynamic Pod Spawn| POD_TCC
+    MC_IDC -->|7. Dynamic Pod Spawn| POD_IDC
 
-    POD_AWS -.->|Diagnostic Stderr| LOGS
-    POD_TCC -.->|Diagnostic Stderr| LOGS
-    LOGS --> SPLUNK
+    POD_AWS -.->|8. Stderr Extraction| LOGS
+    POD_TCC -.->|8. Stderr Extraction| LOGS
+    POD_IDC -.->|8. Stderr Extraction| LOGS
+    LOGS ==>|9. SLO & Alert Stream| SPLUNK

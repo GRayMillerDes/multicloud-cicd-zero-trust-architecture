@@ -6,7 +6,7 @@ This technical reference provides the engineering specifications for building a 
 
 ## 1. High-Level Architectural Topology
 
-![Multi-Cloud Architecture Topology](./multicloud-cicd-topology.png)
+![Multi-Cloud Architecture Topology](./multicloud-cicd-topology.svg)
 
 ### Architectural Invariants
 1. **Separation of Control & Execution**: The central control plane (CloudBees Operations Center) handles RBAC, licensing, and global configuration bundles, while dynamic build workloads are executed locally within tenant-isolated data planes.
