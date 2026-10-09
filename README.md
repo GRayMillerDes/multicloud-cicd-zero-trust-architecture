@@ -13,7 +13,32 @@ This repository contains the architectural blueprints, technical retrospectives,
 
 ---
 
-## ⚡ Quick Navigation
+## ⚡ Quickstart: Consuming & Applying This Blueprint
+
+This repository is designed as an **Enterprise Architecture Toolkit**. To validate, inspect, and apply these architectural assets:
+
+### 1. Test & Dry-Run the Security RBAC Policy
+Validate the production zero-interactive-exec RBAC matrix against your existing Kubernetes cluster:
+```bash
+# Perform dry-run client side validation of the least-privilege RBAC definitions
+kubectl apply --dry-run=client -f ./specs/least-privilege-rbac-matrix.yaml
+```
+
+### 2. Inspect Specifications & Hardening Rules
+- 📖 **[Deep-Dive Architecture Guide](./architecture/architecture-deep-dive.md)**: Control Plane vs Data Plane segregation, mTLS JNLP tunnels, in-memory secret lifecycle.
+- 💼 **[LinkedIn Pulse Article](./articles/linkedin-pulse-article.md)**: Engineering retrospective on scaling platform operations under zero-trust governance.
+- 📋 **[Zero-Trust Guardrails](./specs/zero-trust-guardrails.md)**: CIS Kubernetes benchmark hardening rules and automated drift detection specifications.
+
+### 3. Deploy the Companion Runnable Sandbox
+To spin up a live 3-node Kind cluster reproducing this architecture (Argo CD, ESO, Prometheus, Grafana) locally on your workstation:
+```bash
+git clone https://github.com/GRayMillerDes/hybrid-gitops-sre-lab.git
+cd hybrid-gitops-sre-lab && ./scripts/setup-local-env.sh
+```
+
+---
+
+## 🧭 Document & Asset Index
 
 | Focus Area | Reference Document | Engineering Scope |
 | :--- | :--- | :--- |
