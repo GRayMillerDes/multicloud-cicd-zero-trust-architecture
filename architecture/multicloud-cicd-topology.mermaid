@@ -1,0 +1,69 @@
+graph TB
+    subgraph "Git & Governance Layer"
+        GH[GitHub Enterprise / Code Repos]
+        PR[Pull Request + AIOps Drift Validator]
+        TFC[Terraform Cloud Workflows<br/>(Zero-ClickOps Policy)]
+    end
+
+    subgraph "Secret & Identity Fabric (Zero-Trust)"
+        SSM[AWS SSM Parameter Store / KMS]
+        TCC_KMS[Tencent Cloud KMS / Secrets]
+        VAULT[Enterprise Vault / Central PKI]
+    end
+
+    subgraph "Enterprise CI/CD Control Plane"
+        OC[CloudBees Operations Center (OC)<br/>• Central RBAC & Licensing<br/>• Global CasC Bundles]
+    end
+
+    subgraph "Multi-Cloud Kubernetes Data Planes"
+        subgraph "AWS Estate (EKS)"
+            ESO_AWS[External Secrets Operator]
+            MC_AWS[Managed Controller - AWS Apps]
+            POD_AWS[Ephemeral Dynamic Build Pods]
+        end
+
+        subgraph "Tencent Cloud Estate (TKE)"
+            ESO_TCC[External Secrets Operator]
+            MC_TCC[Managed Controller - Core Platform]
+            POD_TCC[Ephemeral Dynamic Build Pods]
+        end
+
+        subgraph "On-Premises IDC (Bare-Metal K8s)"
+            ESO_IDC[External Secrets Operator]
+            MC_IDC[Managed Controller - Legacy/Hybrid]
+            POD_IDC[Ephemeral Dynamic Build Pods]
+        end
+    end
+
+    subgraph "SRE & Non-Interactive Observability"
+        LOGS[Terraform Cloud Diagnostic Hooks<br/>(Pod/Sidecar Stderr Aggregator)]
+        SPLUNK[Enterprise Splunk / Prometheus]
+    end
+
+    %% Flow connections
+    GH -->|PR Trigger| PR
+    PR -->|Approval Gate| TFC
+    TFC -->|Declarative Helm Deploy| OC
+    TFC -->|Declarative Helm Deploy| MC_AWS
+    TFC -->|Declarative Helm Deploy| MC_TCC
+    TFC -->|Declarative Helm Deploy| MC_IDC
+
+    SSM -.->|Async Sync| ESO_AWS
+    TCC_KMS -.->|Async Sync| ESO_TCC
+    VAULT -.->|TLS / Dynamic Keys| ESO_IDC
+
+    ESO_AWS -->|Secret Injection| MC_AWS
+    ESO_TCC -->|Secret Injection| MC_TCC
+    ESO_IDC -->|Secret Injection| MC_IDC
+
+    OC ===|JNLP / mTLS Management| MC_AWS
+    OC ===|JNLP / mTLS Management| MC_TCC
+    OC ===|JNLP / mTLS Management| MC_IDC
+
+    MC_AWS --> POD_AWS
+    MC_TCC --> POD_TCC
+    MC_IDC --> POD_IDC
+
+    POD_AWS -.->|Diagnostic Stderr| LOGS
+    POD_TCC -.->|Diagnostic Stderr| LOGS
+    LOGS --> SPLUNK

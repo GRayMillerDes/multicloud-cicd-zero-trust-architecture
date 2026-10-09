@@ -1,0 +1,41 @@
+# ==============================================================================
+# Enterprise Kubernetes Least-Privilege RBAC Matrix Specification
+# Defines strict permission boundaries between automated CI runners & human engineers
+# ==============================================================================
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: platform-engineer-restricted-observer
+  labels:
+    app.kubernetes.io/part-of: enterprise-governance
+rules:
+  # Read-only cluster inspection allowed
+  - apiGroups: [""]
+    resources: ["pods", "pods/status", "services", "namespaces", "configmaps", "events"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["apps"]
+    resources: ["deployments", "statefulsets", "replicasets"]
+    verbs: ["get", "list", "watch"]
+  # Pod execution & port-forwarding STRICTLY FORBIDDEN by omitting pods/exec and pods/portforward
+  # Secret payload reading STRICTLY FORBIDDEN by omitting secrets get/list/watch
+  - apiGroups: ["external-secrets.io"]
+    resources: ["externalsecrets", "secretstores", "clustersecretstores"]
+    verbs: ["get", "list", "watch"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: automated-sre-diagnostic-hook
+  labels:
+    app.kubernetes.io/part-of: enterprise-governance
+rules:
+  # Ephemeral non-interactive log & exit code aggregation
+  - apiGroups: [""]
+    resources: ["pods", "pods/status", "pods/log"]
+    verbs: ["get", "list"]
+  - apiGroups: [""]
+    resources: ["events"]
+    verbs: ["get", "list"]
+  # Explicitly disallow write, patch, delete, or interactive exec
